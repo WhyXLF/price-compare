@@ -1,4 +1,4 @@
-package com.neuq.flight.grab.service.qunar.grab;
+package com.neuq.flight.grab.service.qunar;
 
 import com.alibaba.fastjson.JSON;
 import com.neuq.flight.grab.constant.qunar.UrlConstants;
