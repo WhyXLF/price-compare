@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" monitorInterval="60">
+    <Properties>
+        <Property name="LOG_DIR">/opt/logs/price-platform/</Property>
+        <Property name="PATTERN">[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %c{1} - %msg%n</Property>
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT"> <!-- 定义类型为Console的Appender -->
+            <PatternLayout pattern="${PATTERN}"/> <!-- 定义类型为Pattern的Layout -->
+        </Console>
+        <!--通用日志-->
+        <RollingRandomAccessFile name="commonAppender" fileName="${LOG_DIR}/common.log"
+                                 filePattern="${LOG_DIR}/history/common-%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="debugAppender" fileName="${LOG_DIR}/debug.log"
+                                 filePattern="${LOG_DIR}/history/common-%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
+
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="commonAppender"/>
+        </Root>
+        <AsyncLogger level="INFO" name="cache" additivity="false">
+            <AppenderRef ref="debugAppender"/>
+            <AppenderRef ref="Console"/>
+        </AsyncLogger>
+    </Loggers>
+</Configuration>
