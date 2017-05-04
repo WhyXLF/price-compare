@@ -2,6 +2,7 @@ package com.neuq.flight.grab.downloader;
 
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.springframework.stereotype.Component;
@@ -52,6 +53,8 @@ public class WebDriverPool {
                 PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
                 new String[]{"--logLevel=DEBUG"}
         );
+
+        mDriver = new PhantomJSDriver(sCaps);
     }
 
 

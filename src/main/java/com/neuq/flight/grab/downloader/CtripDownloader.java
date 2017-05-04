@@ -1,5 +1,6 @@
 package com.neuq.flight.grab.downloader;
 
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
+@NoArgsConstructor
 public class CtripDownloader implements Downloader, Closeable {
     private volatile WebDriverPool webDriverPool;
     private int wait = 0;
