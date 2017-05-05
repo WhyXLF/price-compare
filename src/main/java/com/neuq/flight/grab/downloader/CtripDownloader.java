@@ -65,10 +65,10 @@ public class CtripDownloader implements Downloader, Closeable {
                 manage.addCookie(cookie);
             }
         }
-
+        log.info("ok");
         //获取实际内容
         String pageSource = webDriver.getPageSource();
-
+        log.info("pageSource ={}",pageSource);
         //创建page对象
         Page page = new Page();
         page.setRawText(pageSource);
