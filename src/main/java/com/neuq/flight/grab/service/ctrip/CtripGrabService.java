@@ -38,6 +38,157 @@ public class CtripGrabService {
     private BaseDataService baseDataService;
 
     /**
+     * 获取priceResult
+     *
+     * @param html
+     * @return
+     */
+    public PriceResult getPriceResult(String html) {
+        PriceResult priceResult = new PriceResult();
+        //获取航班列表集合信息
+        Optional<Element> flightsListsOptional = getFlightsLists(html);
+        if (!flightsListsOptional.isPresent()) {
+            log.warn("getSimpleGrabSearchInfoOW no flightsLists!");
+            return priceResult;
+        }
+        Element flightsList = flightsListsOptional.get();
+        //获取航班列表信息
+        Optional<Elements> flightItemsOptional = getFlightItems(flightsList);
+        if (!flightItemsOptional.isPresent()) {
+            log.warn("getSimpleGrabSearchInfoOW no flightItems!");
+            return priceResult;
+        }
+        Elements flightItems = flightItemsOptional.get();
+        //报价航线信息
+        List<PriceRouting> priceRoutings = Lists.newArrayList();
+        priceResult.setRoutings(priceRoutings);
+        int index = 0;
+        for (Element flightItem : flightItems) {
+            //获取航班详情信息
+            Optional<Element> flightDetailExpendOptional = getFlightDetailExpend(flightItem);
+            if (!flightDetailExpendOptional.isPresent()) {
+                log.warn("getSimpleGrabSearchInfoOW no flightDetailExpend!");
+                return priceResult;
+            }
+            Element flightDetailExpend = flightDetailExpendOptional.get();
+            //获取航班详情对应的航段信息
+            Optional<Elements> flightDetailSectionsOptional = getFlightDetailSections(flightDetailExpend);
+            if (!flightDetailSectionsOptional.isPresent()) {
+                log.warn("getSimpleGrabSearchInfoOW no flightDetailSections!");
+                return priceResult;
+            }
+            Elements flightDetailSections = flightDetailSectionsOptional.get();
+            Elements sectionStops = null;
+            Iterator<Element> eleStopIterator = null;
+            //获取航班对应的经停信息
+            Optional<Elements> sectionStopsOptional = getSectionStops(flightDetailExpend);
+            if (!sectionStopsOptional.isPresent()) {
+                log.warn("getSimpleGrabSearchInfoOW no sectionStops");
+            } else {
+                sectionStops = sectionStopsOptional.get();
+                //stop iterator
+                eleStopIterator = sectionStops.iterator();
+            }
+            //报价航线信息
+            PriceRouting priceRouting = new PriceRouting();
+            priceRoutings.add(priceRouting);
+            //报价去程segment
+            List<PriceSegment> fromSegments = Lists.newArrayList();
+            priceRouting.setFromSegments(fromSegments);
+            for (Element flightDetailSection : flightDetailSections) {
+                //航空公司名称
+                String carrier = getAirlineName(flightDetailSection);
+                //航班名称
+                String flightNo = getFlightNo(flightDetailSection);
+                //航班类型
+                String airCraft = getAircraft(flightDetailSection);
+                Optional<Elements> departAndArriveOptional = getDepartAndArrive(flightDetailSection);
+                if (!departAndArriveOptional.isPresent()) {
+                    log.warn("getSimpleGrabSearchInfoOW no depart and arrive info");
+                    return priceResult;
+                }
+                //出发和到达信息
+                Elements departAndArrive = departAndArriveOptional.get();
+                //出发信息
+                Element departEle = getDepartEle(departAndArrive);
+                //出发日期
+                Date depDate = getDate(departEle);
+                //出发机场三字码
+                String depAirportCode = getAirportCode(departEle);
+                //出发机场名称
+                String depAirportName = getAirportName(departEle);
+                //出发航站楼
+                String depTerminal = getAirportTerminal(departEle);
+                //飞行时长
+                String duration = getDuration(departEle);
+                StringBuilder stopCities = new StringBuilder();
+                //中转信息
+                if (eleStopIterator != null) {
+                    while (eleStopIterator.hasNext()) {
+                        //获取经停信息
+                        Element sectionStop = eleStopIterator.next();
+                        //经停城市中文名称
+                        String cityCnName = getStopCity(sectionStop);
+                        //经停时间
+                        String stopTime = getStopTime(sectionStop);
+                        stopCities.append(cityCnName);
+                        stopCities.append("/");
+                    }
+                }
+                if (stopCities.toString().contains("/")) {
+                    stopCities.deleteCharAt(stopCities.lastIndexOf("/"));
+                }
+
+                //到达信息
+                Element arriveEle = getArriveEle(departAndArrive);
+                //到达日期
+                Date arrDate = getDate(arriveEle);
+                //到达机场三字码
+                String arrAirportCode = getAirportCode(arriveEle);
+                //到达机场名称
+                String arrAirportName = getAirportName(arriveEle);
+                //到达航站楼
+                String arrTerminal = getAirportTerminal(arriveEle);
+
+                //TODO 参数缺失
+                PriceSegment priceSegment = PriceSegment.builder()
+                        .carrier(carrier)
+                        .flightNumber(flightNo)
+                        .depAirport(depAirportCode)
+                        .depTime(depDate)
+                        .arrAirport(arrAirportCode)
+                        .arrTime(arrDate)
+                        .stopCities(stopCities.toString())
+                        .departureTerminal(depTerminal)
+                        .arrivingTerminal(arrTerminal)
+                        .aircraftCode(airCraft)
+                        .build();
+                fromSegments.add(priceSegment);
+            }
+            List<Integer> prices = Lists.newArrayList();
+            priceRouting.setPrices(prices);
+            //获取代理商报价信息
+            Optional<Elements> seatRowsOptional = getSeatsRow(flightItem);
+            if (!seatRowsOptional.isPresent()) {
+                log.warn("getSimpleGrabSearchInfoOW no seatsRow!");
+            } else {
+                Elements seatRowsEle = seatRowsOptional.get();
+                //遍历代理商报价信息
+                for (Element seatRow : seatRowsEle) {
+                    //舱位等级
+                    String seatType = getSeatType(seatRow);
+                    String seatPrice = getSeatPrice(seatRow);
+                    if (seatPrice != null) {
+                        prices.add(Integer.parseInt(seatPrice));
+                    }
+
+                }
+            }
+        }
+        return priceResult;
+    }
+
+    /**
      * 单程抓取数据
      *
      * @param fromCityCode 出发城市三字码
@@ -46,7 +197,7 @@ public class CtripGrabService {
      */
     public PriceResult getSimpleGrabSearchInfoOW(String fromCityCode, String toCityCode, String goDate) {
         //报价结果信息
-        PriceResult priceResult = new PriceResult();
+        final PriceResult[] priceResult = {new PriceResult()};
         //构建CtripUrlBuilder
         CtripUrlBuilder ctripUrlBuilder = CtripUrlBuilder.builder()
                 .tripType(TripType.OW.getTripType())
@@ -57,155 +208,15 @@ public class CtripGrabService {
                 .retDate(null).build();
         //构建搜索URL
         String searchUrl = ctripUrlBuilder.getCtripUrl().orElse("");
-        log.info("searchUrl={}", searchUrl);
+        log.info("searchUrl = {}", searchUrl);
         //获取HTML页面
-        Optional<String> stringOptional = webDriverInvokeService.invoke(searchUrl, WebDriverType.CHROME);
+        Optional<String> stringOptional = webDriverInvokeService.invoke(searchUrl, WebDriverType.PHANTOMJS);
         stringOptional.ifPresent(html -> {
-            //获取航班列表集合信息
-            Optional<Element> flightsListsOptional = getFlightsLists(html);
-            if (!flightsListsOptional.isPresent()) {
-                log.warn("getSimpleGrabSearchInfoOW no flightsLists!");
-                return;
-            }
-            Element flightsList = flightsListsOptional.get();
-            //获取航班列表信息
-            Optional<Elements> flightItemsOptional = getFlightItems(flightsList);
-            if (!flightItemsOptional.isPresent()) {
-                log.warn("getSimpleGrabSearchInfoOW no flightItems!");
-                return;
-            }
-            Elements flightItems = flightItemsOptional.get();
-            //报价航线信息
-            List<PriceRouting> priceRoutings = Lists.newArrayList();
-            priceResult.setRoutings(priceRoutings);
-            int index = 0;
-            for (Element flightItem : flightItems) {
-                //获取航班详情信息
-                Optional<Element> flightDetailExpendOptional = getFlightDetailExpend(flightItem);
-                if (!flightDetailExpendOptional.isPresent()) {
-                    log.warn("getSimpleGrabSearchInfoOW no flightDetailExpend!");
-                    return;
-                }
-                Element flightDetailExpend = flightDetailExpendOptional.get();
-                //获取航班详情对应的航段信息
-                Optional<Elements> flightDetailSectionsOptional = getFlightDetailSections(flightDetailExpend);
-                if (!flightDetailSectionsOptional.isPresent()) {
-                    log.warn("getSimpleGrabSearchInfoOW no flightDetailSections!");
-                    return;
-                }
-                Elements flightDetailSections = flightDetailSectionsOptional.get();
-                Elements sectionStops = null;
-                Iterator<Element> eleStopIterator = null;
-                //获取航班对应的经停信息
-                Optional<Elements> sectionStopsOptional = getSectionStops(flightDetailExpend);
-                if (!sectionStopsOptional.isPresent()) {
-                    log.warn("getSimpleGrabSearchInfoOW no sectionStops");
-                } else {
-                    sectionStops = sectionStopsOptional.get();
-                    //stop iterator
-                    eleStopIterator = sectionStops.iterator();
-                }
-                //报价航线信息
-                PriceRouting priceRouting = new PriceRouting();
-                priceRoutings.add(priceRouting);
-                //报价去程segment
-                List<PriceSegment> fromSegments = Lists.newArrayList();
-                priceRouting.setFromSegments(fromSegments);
-                for (Element flightDetailSection : flightDetailSections) {
-                    //航空公司名称
-                    String carrier = getAirlineName(flightDetailSection);
-                    //航班名称
-                    String flightNo = getFlightNo(flightDetailSection);
-                    //航班类型
-                    String airCraft = getAircraft(flightDetailSection);
-                    Optional<Elements> departAndArriveOptional = getDepartAndArrive(flightDetailSection);
-                    if (!departAndArriveOptional.isPresent()) {
-                        log.warn("getSimpleGrabSearchInfoOW no depart and arrive info");
-                        return;
-                    }
-                    //出发和到达信息
-                    Elements departAndArrive = departAndArriveOptional.get();
-                    //出发信息
-                    Element departEle = getDepartEle(departAndArrive);
-                    //出发日期
-                    Date depDate = getDate(departEle);
-                    //出发机场三字码
-                    String depAirportCode = getAirportCode(departEle);
-                    //出发机场名称
-                    String depAirportName = getAirportName(departEle);
-                    //出发航站楼
-                    String depTerminal = getAirportTerminal(departEle);
-                    //飞行时长
-                    String duration = getDuration(departEle);
-                    StringBuilder stopCities = new StringBuilder();
-                    //中转信息
-                    if (eleStopIterator != null) {
-                        while (eleStopIterator.hasNext()) {
-                            //获取经停信息
-                            Element sectionStop = eleStopIterator.next();
-                            //经停城市中文名称
-                            String cityCnName = getStopCity(sectionStop);
-                            //经停时间
-                            String stopTime = getStopTime(sectionStop);
-                            stopCities.append(cityCnName);
-                            stopCities.append("/");
-                        }
-                    }
-                    if (stopCities.toString().contains("/")) {
-                        stopCities.deleteCharAt(stopCities.lastIndexOf("/"));
-                    }
-
-                    //到达信息
-                    Element arriveEle = getArriveEle(departAndArrive);
-                    //到达日期
-                    Date arrDate = getDate(arriveEle);
-                    //到达机场三字码
-                    String arrAirportCode = getAirportCode(arriveEle);
-                    //到达机场名称
-                    String arrAirportName = getAirportName(arriveEle);
-                    //到达航站楼
-                    String arrTerminal = getAirportTerminal(arriveEle);
-
-                    //TODO 参数缺失
-                    PriceSegment priceSegment = PriceSegment.builder()
-                            .carrier(carrier)
-                            .flightNumber(flightNo)
-                            .depAirport(depAirportCode)
-                            .depTime(depDate)
-                            .arrAirport(arrAirportCode)
-                            .arrTime(arrDate)
-                            .stopCities(stopCities.toString())
-                            .departureTerminal(depTerminal)
-                            .arrivingTerminal(arrTerminal)
-                            .aircraftCode(airCraft)
-                            .build();
-                    fromSegments.add(priceSegment);
-                }
-                List<Integer>prices =Lists.newArrayList();
-                priceRouting.setPrices(prices);
-                //获取代理商报价信息
-                Optional<Elements> seatRowsOptional = getSeatsRow(flightItem);
-                if (!seatRowsOptional.isPresent()) {
-                    log.warn("getSimpleGrabSearchInfoOW no seatsRow!");
-                } else {
-                    Elements seatRowsEle = seatRowsOptional.get();
-                    //遍历代理商报价信息
-                    for (Element seatRow : seatRowsEle) {
-                        //舱位等级
-                        String seatType = getSeatType(seatRow);
-                        String seatPrice = getSeatPrice(seatRow);
-                        if (seatPrice!=null) {
-                            prices.add(Integer.parseInt(seatPrice));
-                        }
-
-                    }
-                }
-            }
-
+            priceResult[0] =getPriceResult(html);
             //关闭webDriver
             WebDriverUtil.closeWebDriver();
         });
-        return priceResult;
+        return priceResult[0];
     }
 
     /**

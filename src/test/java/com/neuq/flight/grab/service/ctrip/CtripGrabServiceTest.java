@@ -26,7 +26,7 @@ public class CtripGrabServiceTest {
 
     @Test
     public void getSimpleGrabSearchInfoOW() throws Exception {
-        PriceResult priceResult = ctripGrabService.getSimpleGrabSearchInfoOW("CTU", "NYC", "2017-06-02");
+        PriceResult priceResult = ctripGrabService.getSimpleGrabSearchInfoOW("CTU", "NYC", "2017-06-01");
         log.info("priceResult={}", priceResult);
     }
 

@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import redis.clients.jedis.commands.RedisPipeline;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
@@ -31,7 +32,10 @@ public class CtripProcessorTest {
     public void test(){
         Spider.create(ctripProcessor)
                 .addPipeline(new ConsolePipeline())
-                .addUrl("http://flights.ctrip.com/international/chengdu-newyork-ctu-nyc?2017-06-01&y_s")
+                .addUrl("http://flights.ctrip.com/international/chengdu-newyork-ctu-nyc?2017-06-10&y_s")
+                .addUrl("http://flights.ctrip.com/international/chengdu-newyork-ctu-nyc?2017-06-11&y_s")
+                .addUrl("http://flights.ctrip.com/international/chengdu-newyork-ctu-nyc?2017-06-12&y_s")
+                .addUrl("http://flights.ctrip.com/international/chengdu-newyork-ctu-nyc?2017-06-13&y_s")
                 .setDownloader(ctripDownloader)
                 .run();
     }

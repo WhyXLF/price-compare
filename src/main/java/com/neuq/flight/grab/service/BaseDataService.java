@@ -41,7 +41,7 @@ public class BaseDataService {
      * @return 城市英文名称
      */
     public Optional<String> getCityEName(String cityCode) {
-        Optional<String> stringOptional = Optional.empty();
+        Optional<String> stringOptional;
         CityInfoResponse cityInfoResponse = queryBaseData(cityCode);
         stringOptional = Optional.of(cityInfoResponse.getData().get(0).getEName().toLowerCase());
         return stringOptional;
