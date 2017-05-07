@@ -6,8 +6,6 @@ package com.neuq.flight.grab.constant.ctrip;
  * @descripe: 抓包请求的url
  */
 public class UrlConstants {
-    //单程航班信息
-    public final static String OWFLIGHT_LIST_URL = "http://flights.ctrip.com/domesticsearch/search/SearchFirstRouteFlights";
 
     public static final String CTRIP_INTERNAL_OW_PAGE_URL = "http://flights.ctrip.com/international/%s-%s-%s-%s?%s&y_s";
     public static final String CTRIP_INTERNAL_RT_PAGE_URL = "http://flights.ctrip.com/international/%s-%s-%s-%s?%s&%s&y_s";

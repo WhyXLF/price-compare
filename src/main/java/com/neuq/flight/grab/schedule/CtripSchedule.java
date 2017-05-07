@@ -24,10 +24,8 @@ public class CtripSchedule {
     /**
      * 定时抓取
      */
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(cron = "0 0 0/24 * * ?")
     public void ctripCrab() {
-//        String departDate = departLocalDate.format(formatter);
-//        ctripGrabService.grabCtripPrice("BJS", "NYC", departDate, null, TripType.OW.getTripType());
-//        departLocalDate = departLocalDate.plusDays(1);
+        ctripGrabService.grabCtripPrice("BJS", "NYC", "2017-07-15", null, TripType.OW.getTripType());
     }
 }

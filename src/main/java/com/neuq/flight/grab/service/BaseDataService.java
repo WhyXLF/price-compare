@@ -22,7 +22,7 @@ public class BaseDataService {
      * @param key key
      * @return CityInfoResponse
      */
-    public CityInfoResponse queryBaseData(String key) {
+    private CityInfoResponse queryBaseData(String key) {
         HttpAgent httpAgent = HttpAgent.create();
         String url = String.format(UrlConstants.CTRIP_INTERNAL_CITY_INFO_URL, key);
         try {
@@ -41,9 +41,11 @@ public class BaseDataService {
      * @return 城市英文名称
      */
     public Optional<String> getCityEName(String cityCode) {
-        Optional<String> stringOptional;
+        Optional<String> stringOptional = Optional.empty();
         CityInfoResponse cityInfoResponse = queryBaseData(cityCode);
-        stringOptional = Optional.of(cityInfoResponse.getData().get(0).getEName().toLowerCase().replace(" ","").trim());
+        if (cityInfoResponse != null) {
+            stringOptional = Optional.of(cityInfoResponse.getData().get(0).getEName().toLowerCase().replace(" ", "").trim());
+        }
         return stringOptional;
     }
 
