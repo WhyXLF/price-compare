@@ -1,6 +1,5 @@
 package com.neuq.flight.grab.downloader;
 
-import com.neuq.flight.grab.utils.webdriver.WebDriverUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -26,18 +25,23 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CtripDownloader implements Downloader, Closeable {
     private volatile WebDriverPool webDriverPool;
-    private static final int DEFAULT_WAIT_TIME = 10;
-    private int waitSeconds = 1;
-    private int poolSize = 1;
+    private static final int DEFAULT_WAIT_TIME = 5;
+    private static final int DEFAULT_POOL_SIZE = 10;
+    private int waitSeconds;
+    private int poolSize;
+
+
 
     public CtripDownloader() {
         System.getProperties().setProperty("phantomjs.binary.path", "./src/main/resources/phantomjs");
+        System.getProperties().setProperty("webdriver.chrome.driver", "./src/main/resources/chromedriver_mac");
         waitSeconds = DEFAULT_WAIT_TIME;
+        poolSize =DEFAULT_POOL_SIZE;
     }
 
-    public CtripDownloader(String phantomjsPath, int waitMinute, int poolSize) {
+    public CtripDownloader(String phantomjsPath, int waitSecond, int poolSize) {
         System.getProperties().setProperty("phantomjs.binary.path", phantomjsPath);
-        this.waitSeconds = waitMinute;
+        this.waitSeconds = waitSecond;
         this.poolSize = poolSize;
     }
 

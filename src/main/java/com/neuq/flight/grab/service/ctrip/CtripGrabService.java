@@ -2,20 +2,21 @@ package com.neuq.flight.grab.service.ctrip;
 
 import com.google.common.collect.Lists;
 import com.neuq.flight.grab.constant.enumType.TripType;
-import com.neuq.flight.grab.constant.enumType.WebDriverType;
+import com.neuq.flight.grab.downloader.CtripDownloader;
 import com.neuq.flight.grab.entity.common.PriceResult;
 import com.neuq.flight.grab.entity.common.PriceRouting;
 import com.neuq.flight.grab.entity.common.PriceSegment;
+import com.neuq.flight.grab.processor.CtripProcessor;
 import com.neuq.flight.grab.service.BaseDataService;
-import com.neuq.flight.grab.service.WebDriverInvokeService;
 import com.neuq.flight.grab.utils.builders.CtripUrlBuilder;
 import com.neuq.flight.grab.utils.dom.DocumentUtil;
-import com.neuq.flight.grab.utils.webdriver.WebDriverUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import us.codecraft.webmagic.Spider;
+import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
 import javax.annotation.Resource;
 import java.text.ParseException;
@@ -33,15 +34,42 @@ import java.util.*;
 public class CtripGrabService {
 
     @Resource
-    private WebDriverInvokeService webDriverInvokeService;
-    @Resource
     private BaseDataService baseDataService;
+
+    @Resource
+    private CtripProcessor ctripProcessor;
+
+    @Resource
+    private CtripDownloader ctripDownloader;
+
+    /**
+     * 携程报价信息抓取
+     *
+     * @param fromCityCode 出发城市三字码
+     * @param toCityCode   到达城市三字码
+     * @param goDate       出发日期 yyyy-MM-dd
+     * @param backDate     返程日期 yyyy-MM-dd
+     * @param tripType     往返/单程
+     */
+    public void grabCtripPrice(String fromCityCode, String toCityCode, String goDate, String backDate, int tripType) {
+        if (tripType == TripType.RT.getTripType()) {
+            throw new UnsupportedOperationException("暂时不支持往返数据抓取");
+        } else if (tripType == TripType.OW.getTripType()) {
+            String owSearchUrl = getOwSearchUrl(fromCityCode, toCityCode, goDate);
+            Spider.create(ctripProcessor)
+                    .addUrl(owSearchUrl)
+                    .setDownloader(ctripDownloader)
+                    .addPipeline(new ConsolePipeline())
+                    .run();
+        }
+    }
+
 
     /**
      * 获取priceResult
      *
-     * @param html
-     * @return
+     * @param html html页面内容
+     * @return 报价结果
      */
     public PriceResult getPriceResult(String html) {
         PriceResult priceResult = new PriceResult();
@@ -189,15 +217,14 @@ public class CtripGrabService {
     }
 
     /**
-     * 单程抓取数据
+     * 获取单程搜索url
      *
      * @param fromCityCode 出发城市三字码
      * @param toCityCode   到达城市三字码
-     * @param goDate       出发日期
+     * @param goDate       出发日期 yyyy-MM-dd
+     * @return url
      */
-    public PriceResult getSimpleGrabSearchInfoOW(String fromCityCode, String toCityCode, String goDate) {
-        //报价结果信息
-        final PriceResult[] priceResult = {new PriceResult()};
+    private String getOwSearchUrl(String fromCityCode, String toCityCode, String goDate) {
         //构建CtripUrlBuilder
         CtripUrlBuilder ctripUrlBuilder = CtripUrlBuilder.builder()
                 .tripType(TripType.OW.getTripType())
@@ -207,24 +234,9 @@ public class CtripGrabService {
                 .toDate(goDate)
                 .retDate(null).build();
         //构建搜索URL
-        String searchUrl = ctripUrlBuilder.getCtripUrl().orElse("");
-        log.info("searchUrl = {}", searchUrl);
-        //获取HTML页面
-        Optional<String> stringOptional = webDriverInvokeService.invoke(searchUrl, WebDriverType.PHANTOMJS);
-        stringOptional.ifPresent(html -> {
-            priceResult[0] =getPriceResult(html);
-            //关闭webDriver
-            WebDriverUtil.closeWebDriver();
-        });
-        return priceResult[0];
+        return ctripUrlBuilder.getCtripUrl().orElse("");
     }
 
-    /**
-     * 获取报价信息
-     *
-     * @param seatRow
-     * @return
-     */
     private String getSeatPrice(Element seatRow) {
         if (seatRow.is("div.seat-row")) {
             return seatRow.select("div.seat-price > div.mb5 > span.price").first().ownText();
@@ -233,7 +245,6 @@ public class CtripGrabService {
     }
 
     private String getSeatType(Element seatRow) {
-        Optional<Element> seatType = Optional.empty();
         if (seatRow.is("div.seat-row")) {
             Elements select = seatRow.select("div.seat-type");
             return select.first().ownText();
@@ -268,12 +279,6 @@ public class CtripGrabService {
         return elementOptional;
     }
 
-    /**
-     * 获取航班列表信息
-     *
-     * @param html HTML
-     * @return element
-     */
     private Optional<Element> getFlightsLists(String html) {
         Optional<Element> elementOptional = Optional.empty();
         Document document = DocumentUtil.getDocument(html);
@@ -284,27 +289,6 @@ public class CtripGrabService {
         return elementOptional;
     }
 
-
-    /**
-     * 获取flight-detail-expends
-     *
-     * @param flightItems flightItems
-     * @return 指定类型的元素
-     */
-    private Elements getFlightDetailExpends(Elements flightItems) {
-        if (flightItems.is("div#flightList")) {
-            return flightItems.select("div.flight-item > div.flight-detail-expend");
-        }
-        return null;
-    }
-
-
-    /**
-     * 获取flight-detail-sections
-     *
-     * @param flightDetailExpend flightDetailExpend
-     * @return Elements
-     */
     private Optional<Elements> getFlightDetailSections(Element flightDetailExpend) {
         Optional<Elements> elementsOptional = Optional.empty();
         if (flightDetailExpend.is("div.flight-detail-expend")) {
@@ -314,12 +298,6 @@ public class CtripGrabService {
         return elementsOptional;
     }
 
-    /**
-     * 获取sction-stop
-     *
-     * @param flightDetailExpend flightDetailExpend
-     * @return Elements
-     */
     private Optional<Elements> getSectionStops(Element flightDetailExpend) {
         Optional<Elements> elementsOptional = Optional.empty();
         if (flightDetailExpend.is("div.flight-detail-expend")) {
@@ -329,12 +307,6 @@ public class CtripGrabService {
         return elementsOptional;
     }
 
-    /**
-     * 获取航班名称
-     *
-     * @param flightDetailSection
-     * @return
-     */
     private String getAirlineName(Element flightDetailSection) {
         if (flightDetailSection.is("div.flight-detail-section")) {
             Element sectionFlightBase = flightDetailSection.select("p.section-flight-base").first();
@@ -343,12 +315,6 @@ public class CtripGrabService {
         return null;
     }
 
-    /**
-     * 获取航班号
-     *
-     * @param flightDetailSection
-     * @return
-     */
     private String getFlightNo(Element flightDetailSection) {
         if (flightDetailSection.is("div.flight-detail-section")) {
             Element flightNo = flightDetailSection.select("p.section-flight-base > span.flight-No").first();
@@ -357,13 +323,6 @@ public class CtripGrabService {
         return null;
     }
 
-
-    /**
-     * 获取机型信息
-     *
-     * @param flightDetailSection
-     * @return
-     */
     private String getAircraft(Element flightDetailSection) {
         if (flightDetailSection.is("div.flight-detail-section")) {
             Element airCraft = flightDetailSection.select("p.section-flight-base > span.plane-type > span.abbr").first();
@@ -372,12 +331,6 @@ public class CtripGrabService {
         return null;
     }
 
-    /**
-     * 获取日期信息
-     *
-     * @param departOrArriveEle
-     * @return
-     */
     private Date getDate(Element departOrArriveEle) {
         String date = departOrArriveEle.select("span.section-date").first().ownText();
         String time = departOrArriveEle.select("span.section-time").first().ownText();
@@ -404,32 +357,14 @@ public class CtripGrabService {
         return date;
     }
 
-    /**
-     * 获取机场三字码
-     *
-     * @param departOrArriveEle
-     * @return
-     */
     private String getAirportCode(Element departOrArriveEle) {
         return departOrArriveEle.select("span.section-airport").first().ownText().split(" ")[0];
     }
 
-    /**
-     * 获取机场中文名称
-     *
-     * @param departOrArriveEle
-     * @return
-     */
     private String getAirportName(Element departOrArriveEle) {
         return departOrArriveEle.select("span.section-airport").first().ownText().split(" ")[1];
     }
 
-    /**
-     * 获取飞机航站楼
-     *
-     * @param departOrArriveEle
-     * @return
-     */
     private String getAirportTerminal(Element departOrArriveEle) {
         Elements terminals = departOrArriveEle.select("span.section-terminal");
         if (terminals != null && terminals.size() != 0) {
@@ -438,12 +373,6 @@ public class CtripGrabService {
         return null;
     }
 
-    /**
-     * 获取飞行时长
-     *
-     * @param departOrArriveEle
-     * @return
-     */
     private String getDuration(Element departOrArriveEle) {
         String origin = departOrArriveEle.select("span.section-duration").first().ownText();
         if (origin.contains(" ")) {
@@ -452,32 +381,14 @@ public class CtripGrabService {
         return null;
     }
 
-    /**
-     * 获取出发机场元素信息
-     *
-     * @param departAndArriveEles
-     * @return
-     */
     private Element getDepartEle(Elements departAndArriveEles) {
         return departAndArriveEles.get(0);
     }
 
-    /**
-     * 获取到达机场元素信息
-     *
-     * @param departAndArriveEles
-     * @return
-     */
     private Element getArriveEle(Elements departAndArriveEles) {
         return departAndArriveEles.get(1);
     }
 
-    /**
-     * 获取出发和到达机场元素信息
-     *
-     * @param flightDetailSection
-     * @return
-     */
     private Optional<Elements> getDepartAndArrive(Element flightDetailSection) {
         Optional<Elements> elementsOptional = Optional.empty();
         if (flightDetailSection.is("div.flight-detail-section")) {
@@ -487,12 +398,6 @@ public class CtripGrabService {
         return elementsOptional;
     }
 
-    /**
-     * 获取停留城市城市
-     *
-     * @param sectionStop
-     * @return
-     */
     private String getStopCity(Element sectionStop) {
         if (sectionStop.is("div.section-stop")) {
             return sectionStop.select("div.in > strong").first().ownText();
@@ -500,25 +405,6 @@ public class CtripGrabService {
         return null;
     }
 
-    /**
-     * 获取停留类型
-     *
-     * @param sectionStop
-     * @return
-     */
-    private String getStopType(Element sectionStop) {
-        if (sectionStop.is("div.section-stop")) {
-            return sectionStop.select("div.in").first().ownText().split(" 停留时长：")[0];
-        }
-        return null;
-    }
-
-    /**
-     * 获取停留时长
-     *
-     * @param sectionStop
-     * @return
-     */
     private String getStopTime(Element sectionStop) {
         if (sectionStop.is("div.section-stop")) {
             return sectionStop.select("div.in").first().ownText().split(" 停留时长：")[1];

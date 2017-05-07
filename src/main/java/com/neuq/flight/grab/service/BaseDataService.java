@@ -43,7 +43,7 @@ public class BaseDataService {
     public Optional<String> getCityEName(String cityCode) {
         Optional<String> stringOptional;
         CityInfoResponse cityInfoResponse = queryBaseData(cityCode);
-        stringOptional = Optional.of(cityInfoResponse.getData().get(0).getEName().toLowerCase());
+        stringOptional = Optional.of(cityInfoResponse.getData().get(0).getEName().toLowerCase().replace(" ","").trim());
         return stringOptional;
     }
 

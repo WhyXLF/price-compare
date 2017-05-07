@@ -22,4 +22,5 @@ public class PriceResult {
      */
     private List<PriceRouting> routings;
 
+
 }

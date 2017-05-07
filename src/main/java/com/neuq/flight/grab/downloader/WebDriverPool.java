@@ -95,11 +95,6 @@ public class WebDriverPool {
                     config();
                     innerQueue.add(mDriver);
                     webDriverList.add(mDriver);
-
-                    // ChromeDriver e = new ChromeDriver();
-                    // WebDriver e = getWebDriver();
-                    // innerQueue.add(e);
-                    // webDriverList.add(e);
                 }
             }
 
@@ -121,7 +116,7 @@ public class WebDriverPool {
     public void closeAll() {
         boolean b = stat.compareAndSet(STAT_RUNNING, STAT_CLODED);
         if (!b) {
-            throw new IllegalStateException("Already closed!");
+            log.info("already closed");
         }
         for (WebDriver webDriver : webDriverList) {
             log.info("Quit webDriver" + webDriver);
