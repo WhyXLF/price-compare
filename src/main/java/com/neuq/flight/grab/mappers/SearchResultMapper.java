@@ -3,8 +3,13 @@ package com.neuq.flight.grab.mappers;
 import com.neuq.flight.grab.domain.SearchResult;
 import com.neuq.flight.grab.domain.SearchResultExample;
 import java.util.List;
-import org.apache.ibatis.annotations.Param;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Component;
+
+
+@Mapper
 public interface SearchResultMapper {
     int countByExample(SearchResultExample example);
 
