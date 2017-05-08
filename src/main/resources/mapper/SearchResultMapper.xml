@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.neuq.flight.grab.mapper.SearchResultMapper" >
+  <resultMap id="BaseResultMap" type="com.neuq.flight.grab.domain.SearchResult" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="trip_type" property="tripType" jdbcType="INTEGER" />
+    <result column="back_date" property="backDate" jdbcType="VARCHAR" />
+    <result column="go_date" property="goDate" jdbcType="VARCHAR" />
+    <result column="to_city_code" property="toCityCode" jdbcType="VARCHAR" />
+    <result column="from_city_code" property="fromCityCode" jdbcType="VARCHAR" />
+  </resultMap>
+  <resultMap id="ResultMapWithBLOBs" type="com.neuq.flight.grab.domain.SearchResult" extends="BaseResultMap" >
+    <result column="search_info" property="searchInfo" jdbcType="LONGVARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, trip_type, back_date, go_date, to_city_code, from_city_code
+  </sql>
+  <sql id="Blob_Column_List" >
+    search_info
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="ResultMapWithBLOBs" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from search_result
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from search_result
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.neuq.flight.grab.domain.SearchResult" >
+    insert into search_result (id, trip_type, back_date, 
+      go_date, to_city_code, from_city_code, 
+      search_info)
+    values (#{id,jdbcType=INTEGER}, #{tripType,jdbcType=INTEGER}, #{backDate,jdbcType=VARCHAR}, 
+      #{goDate,jdbcType=VARCHAR}, #{toCityCode,jdbcType=VARCHAR}, #{fromCityCode,jdbcType=VARCHAR}, 
+      #{searchInfo,jdbcType=LONGVARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.neuq.flight.grab.domain.SearchResult" >
+    insert into search_result
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="tripType != null" >
+        trip_type,
+      </if>
+      <if test="backDate != null" >
+        back_date,
+      </if>
+      <if test="goDate != null" >
+        go_date,
+      </if>
+      <if test="toCityCode != null" >
+        to_city_code,
+      </if>
+      <if test="fromCityCode != null" >
+        from_city_code,
+      </if>
+      <if test="searchInfo != null" >
+        search_info,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="tripType != null" >
+        #{tripType,jdbcType=INTEGER},
+      </if>
+      <if test="backDate != null" >
+        #{backDate,jdbcType=VARCHAR},
+      </if>
+      <if test="goDate != null" >
+        #{goDate,jdbcType=VARCHAR},
+      </if>
+      <if test="toCityCode != null" >
+        #{toCityCode,jdbcType=VARCHAR},
+      </if>
+      <if test="fromCityCode != null" >
+        #{fromCityCode,jdbcType=VARCHAR},
+      </if>
+      <if test="searchInfo != null" >
+        #{searchInfo,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.neuq.flight.grab.domain.SearchResult" >
+    update search_result
+    <set >
+      <if test="tripType != null" >
+        trip_type = #{tripType,jdbcType=INTEGER},
+      </if>
+      <if test="backDate != null" >
+        back_date = #{backDate,jdbcType=VARCHAR},
+      </if>
+      <if test="goDate != null" >
+        go_date = #{goDate,jdbcType=VARCHAR},
+      </if>
+      <if test="toCityCode != null" >
+        to_city_code = #{toCityCode,jdbcType=VARCHAR},
+      </if>
+      <if test="fromCityCode != null" >
+        from_city_code = #{fromCityCode,jdbcType=VARCHAR},
+      </if>
+      <if test="searchInfo != null" >
+        search_info = #{searchInfo,jdbcType=LONGVARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKeyWithBLOBs" parameterType="com.neuq.flight.grab.domain.SearchResult" >
+    update search_result
+    set trip_type = #{tripType,jdbcType=INTEGER},
+      back_date = #{backDate,jdbcType=VARCHAR},
+      go_date = #{goDate,jdbcType=VARCHAR},
+      to_city_code = #{toCityCode,jdbcType=VARCHAR},
+      from_city_code = #{fromCityCode,jdbcType=VARCHAR},
+      search_info = #{searchInfo,jdbcType=LONGVARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.neuq.flight.grab.domain.SearchResult" >
+    update search_result
+    set trip_type = #{tripType,jdbcType=INTEGER},
+      back_date = #{backDate,jdbcType=VARCHAR},
+      go_date = #{goDate,jdbcType=VARCHAR},
+      to_city_code = #{toCityCode,jdbcType=VARCHAR},
+      from_city_code = #{fromCityCode,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>
