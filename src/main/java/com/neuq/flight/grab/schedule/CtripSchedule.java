@@ -24,8 +24,8 @@ public class CtripSchedule {
     /**
      * 定时抓取
      */
-    @Scheduled(fixedRate = 120000)
+    @Scheduled(fixedRate = 86400000)
     public void ctripCrab() {
-        ctripGrabService.grabCtripPrice("BJS", "NYC", "2017-07-15", null, TripType.OW.getTripType());
+        ctripGrabService.grabCtripPrice("BJS", "NYC", "2017-05-08", null, TripType.OW.getTripType());
     }
 }

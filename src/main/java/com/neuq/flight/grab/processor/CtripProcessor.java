@@ -42,8 +42,8 @@ public class CtripProcessor implements PageProcessor {
     public void process(Page page) {
         String content = page.getRawText();
         PriceResult priceResult = ctripGrabService.getPriceResult(content);
+        String url = page.getRequest().getUrl();
         if (priceResult.getRoutings()!=null && priceResult.getRoutings().size()!=0) {
-            String url = page.getRequest().getUrl();
             log.info("origin url ={}", url);
             if (url.contains("?")) {
                 String[] parts = url.split("\\?");
@@ -59,8 +59,11 @@ public class CtripProcessor implements PageProcessor {
                     page.addTargetRequest(new Request(targetUrl));
                 }
             }
+            page.putField("priceResult", priceResult);
+        }else {
+            log.info("no routing info,retry it!");
+            page.addTargetRequest(new Request(url));
         }
-        page.putField("priceResult", priceResult);
     }
 
     @Override

@@ -65,6 +65,7 @@ public class CtripGrabService {
             Spider.create(ctripProcessor)
                     .addUrl(owSearchUrl)
                     .setDownloader(ctripDownloader)
+                    .thread(10)
                     .addPipeline((resultItems, task) -> {
                         PriceResult priceResult = resultItems.get("priceResult");
                         ObjectMapper objectMapper = new ObjectMapper();
