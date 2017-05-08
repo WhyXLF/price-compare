@@ -16,6 +16,8 @@ public class SearchInfo {
 
     private Integer tripType;
 
+    private String content;
+
     public Integer getId() {
         return id;
     }
@@ -62,5 +64,13 @@ public class SearchInfo {
 
     public void setTripType(Integer tripType) {
         this.tripType = tripType;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content == null ? null : content.trim();
     }
 }

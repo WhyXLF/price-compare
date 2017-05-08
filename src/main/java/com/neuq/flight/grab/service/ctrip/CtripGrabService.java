@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.neuq.flight.grab.constant.enumType.TripType;
+import com.neuq.flight.grab.domain.SearchInfo;
 import com.neuq.flight.grab.downloader.CtripDownloader;
 import com.neuq.flight.grab.entity.common.PriceResult;
 import com.neuq.flight.grab.entity.common.PriceRouting;
 import com.neuq.flight.grab.entity.common.PriceSegment;
+import com.neuq.flight.grab.mapper.SearchInfoMapper;
 import com.neuq.flight.grab.processor.CtripProcessor;
 import com.neuq.flight.grab.service.BaseDataService;
 import com.neuq.flight.grab.utils.builders.CtripUrlBuilder;
@@ -33,8 +35,9 @@ import java.util.*;
 @Service
 @Slf4j
 public class CtripGrabService {
-//    @Resource
-//    private SearchResultMapper searchResultMapper;
+
+    @Resource
+    private SearchInfoMapper searchInfoMapper;
 
     @Resource
     private BaseDataService baseDataService;
@@ -66,16 +69,29 @@ public class CtripGrabService {
                         PriceResult priceResult = resultItems.get("priceResult");
                         ObjectMapper objectMapper = new ObjectMapper();
                         try {
-                            String priceResultStr = objectMapper.writeValueAsString(priceResult);
-//                            SearchResult searchResult = SearchResult.builder()
-//                                    .fromCityCode(fromCityCode)
-//                                    .toCityCode(toCityCode)
-//                                    .goDate(goDate)
-//                                    .backDate(backDate)
-//                                    .tripType(tripType)
-//                                    .searchInfo(priceResultStr)
-//                                    .build();
-//                            searchResultMapper.insert(searchResult);
+                            List<PriceRouting> routings = priceResult.getRoutings();
+                            if (routings != null && routings.size() > 0) {
+                                Date goTime = routings.get(0).getFromSegments().get(0).getDepTime();
+                                List<PriceSegment> retSegments = routings.get(0).getRetSegments();
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                String backDateStr = null;
+                                if (retSegments != null && retSegments.size() > 0) {
+                                    Date backTime = retSegments.get(0).getDepTime();
+                                    backDateStr= simpleDateFormat.format(backTime);
+                                }
+                                String goDateStr = simpleDateFormat.format(goTime);
+
+                                String priceResultStr = objectMapper.writeValueAsString(priceResult);
+                                SearchInfo searchInfo = SearchInfo.builder()
+                                        .fromCityCode(fromCityCode)
+                                        .toCityCode(toCityCode)
+                                        .goDate(goDateStr)
+                                        .backDate(backDateStr)
+                                        .tripType(tripType)
+                                        .content(priceResultStr)
+                                        .build();
+                                searchInfoMapper.insert(searchInfo);
+                            }
                         } catch (JsonProcessingException e) {
                             e.printStackTrace();
                         }
