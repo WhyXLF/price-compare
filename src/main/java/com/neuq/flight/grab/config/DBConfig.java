@@ -15,6 +15,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Slf4j
 @EnableTransactionManagement
 @Configuration
-@MapperScan(basePackages = "com.neuq.flight.grab.mappers", sqlSessionFactoryRef = "sqlSessionFactoryBean")
+@MapperScan(basePackages = "com.neuq.flight.grab.mapper")
 public class DBConfig {
 }
