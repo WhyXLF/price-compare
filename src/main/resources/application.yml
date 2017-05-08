@@ -3,8 +3,8 @@ server:
     context-path:
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/ctrip_db
-    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ctrip_db?autoReconnect=true&useUnicode=true&connectTimeout=1000&socketTimeout=3000&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false&readOnlyPropagatesToServer=false
+    driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 123456
     hikari:

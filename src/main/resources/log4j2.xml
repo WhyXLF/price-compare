@@ -37,5 +37,8 @@
             <AppenderRef ref="debugAppender"/>
             <AppenderRef ref="Console"/>
         </AsyncLogger>
+        <AsyncLogger level="DEBUG" name="com.neuq.flight.grab.mapper" additivity="false">
+            <AppenderRef ref="Console"/>
+        </AsyncLogger>
     </Loggers>
 </Configuration>

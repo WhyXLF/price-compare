@@ -1,5 +1,7 @@
 package com.neuq.flight.grab.service.ctrip;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.neuq.flight.grab.constant.enumType.TripType;
 import com.neuq.flight.grab.downloader.CtripDownloader;
@@ -16,7 +18,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Spider;
-import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
 import javax.annotation.Resource;
 import java.text.ParseException;
@@ -32,6 +33,8 @@ import java.util.*;
 @Service
 @Slf4j
 public class CtripGrabService {
+//    @Resource
+//    private SearchResultMapper searchResultMapper;
 
     @Resource
     private BaseDataService baseDataService;
@@ -59,7 +62,26 @@ public class CtripGrabService {
             Spider.create(ctripProcessor)
                     .addUrl(owSearchUrl)
                     .setDownloader(ctripDownloader)
-                    .addPipeline(new ConsolePipeline())
+                    .addPipeline((resultItems, task) -> {
+                        PriceResult priceResult = resultItems.get("priceResult");
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        try {
+                            String priceResultStr = objectMapper.writeValueAsString(priceResult);
+//                            SearchResult searchResult = SearchResult.builder()
+//                                    .fromCityCode(fromCityCode)
+//                                    .toCityCode(toCityCode)
+//                                    .goDate(goDate)
+//                                    .backDate(backDate)
+//                                    .tripType(tripType)
+//                                    .searchInfo(priceResultStr)
+//                                    .build();
+//                            searchResultMapper.insert(searchResult);
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
+
+
+                    })
                     .run();
         }
     }

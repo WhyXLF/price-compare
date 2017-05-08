@@ -41,24 +41,25 @@ public class CtripProcessor implements PageProcessor {
     @Override
     public void process(Page page) {
         String content = page.getRawText();
-        String url = page.getRequest().getUrl();
-        log.info("origin url ={}", url);
-        if (url.contains("?")) {
-            String[] parts = url.split("\\?");
-            if (parts.length == 2 && parts[1].contains("&")) {
-                String parts2[] = parts[1].split("&");
-                String time = parts2[0];
-                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                LocalDate localDate = LocalDate.parse(time, dateTimeFormatter);
-                localDate = localDate.plusDays(1);
-                String targetUrl = parts[0] + "?" + localDate.format(dateTimeFormatter) + "&" + parts2[1];
-                log.info("targetUrl={}", targetUrl);
-                //接下来需要抓取的url
-                page.addTargetRequest(new Request(targetUrl));
+        PriceResult priceResult = ctripGrabService.getPriceResult(content);
+        if (priceResult.getRoutings()!=null && priceResult.getRoutings().size()!=0) {
+            String url = page.getRequest().getUrl();
+            log.info("origin url ={}", url);
+            if (url.contains("?")) {
+                String[] parts = url.split("\\?");
+                if (parts.length == 2 && parts[1].contains("&")) {
+                    String parts2[] = parts[1].split("&");
+                    String time = parts2[0];
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    LocalDate localDate = LocalDate.parse(time, dateTimeFormatter);
+                    localDate = localDate.plusDays(1);
+                    String targetUrl = parts[0] + "?" + localDate.format(dateTimeFormatter) + "&" + parts2[1];
+                    log.info("targetUrl={}", targetUrl);
+                    //接下来需要抓取的url
+                    page.addTargetRequest(new Request(targetUrl));
+                }
             }
         }
-
-        PriceResult priceResult = ctripGrabService.getPriceResult(content);
         page.putField("priceResult", priceResult);
     }
 
