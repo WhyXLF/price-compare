@@ -1,8 +1,12 @@
 package com.neuq.flight.grab.domain;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SearchInfo {
     private Integer id;
 

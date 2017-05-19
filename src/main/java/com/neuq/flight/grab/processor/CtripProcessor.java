@@ -8,12 +8,11 @@ import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
-import us.codecraft.webmagic.selector.Selectable;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 /**
  * author: xiaoliufu
@@ -40,10 +39,16 @@ public class CtripProcessor implements PageProcessor {
     // process是定制爬虫逻辑的核心接口，在这里编写抽取逻辑
     @Override
     public void process(Page page) {
-        String content = page.getRawText();
-        PriceResult priceResult = ctripGrabService.getPriceResult(content);
         String url = page.getRequest().getUrl();
-        if (priceResult.getRoutings()!=null && priceResult.getRoutings().size()!=0) {
+        PriceResult priceResult = null;
+        try {
+            String content = page.getRawText();
+            priceResult = ctripGrabService.getPriceResult(content);
+            if (priceResult.getRoutings() == null || priceResult.getRoutings().size() == 0) {
+                log.info("no routing info,retry it! url={}", url);
+                page.addTargetRequest(new Request(url));
+            }
+            page.putField("priceResult", priceResult);
             log.info("origin url ={}", url);
             if (url.contains("?")) {
                 String[] parts = url.split("\\?");
@@ -53,17 +58,21 @@ public class CtripProcessor implements PageProcessor {
                     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                     LocalDate localDate = LocalDate.parse(time, dateTimeFormatter);
                     localDate = localDate.plusDays(1);
-                    String targetUrl = parts[0] + "?" + localDate.format(dateTimeFormatter) + "&" + parts2[1];
-                    log.info("targetUrl={}", targetUrl);
-                    //接下来需要抓取的url
-                    page.addTargetRequest(new Request(targetUrl));
+                    Period between = Period.between(LocalDate.now(),localDate);
+                    if (between.getMonths() < 1 ) {
+                        String targetUrl = parts[0] + "?" + localDate.format(dateTimeFormatter) + "&" + parts2[1];
+                        log.info("targetUrl={}", targetUrl);
+                        //接下来需要抓取的url
+                        page.addTargetRequest(new Request(targetUrl));
+                    }
                 }
             }
+        } catch (Exception e) {
+            log.error("exception", e);
+            page.addTargetRequest(new Request(url + "&retry=1"));
             page.putField("priceResult", priceResult);
-        }else {
-            log.info("no routing info,retry it!");
-            page.addTargetRequest(new Request(url));
         }
+
     }
 
     @Override

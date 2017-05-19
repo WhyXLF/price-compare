@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.neuq.flight.grab.constant.enumType.TripType;
 import com.neuq.flight.grab.domain.SearchInfo;
+import com.neuq.flight.grab.domain.SearchInfoExample;
 import com.neuq.flight.grab.downloader.CtripDownloader;
 import com.neuq.flight.grab.entity.common.PriceResult;
 import com.neuq.flight.grab.entity.common.PriceRouting;
@@ -48,6 +49,62 @@ public class CtripGrabService {
     @Resource
     private CtripDownloader ctripDownloader;
 
+    public void grabCtripPrice(String fromCityCode,String toCityCode,int tripType,List<String> urls) {
+        Spider spider = Spider.create(ctripProcessor);
+        for (String url : urls) {
+            spider.addUrl(url);
+        }
+        spider.setDownloader(ctripDownloader)
+                .thread(10)
+                .addPipeline((resultItems, task) -> {
+                    PriceResult priceResult = resultItems.get("priceResult");
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try {
+                        if (priceResult != null) {
+                            List<PriceRouting> routings = priceResult.getRoutings();
+                            if (routings != null && routings.size() > 0) {
+                                Date goTime = routings.get(0).getFromSegments().get(0).getDepTime();
+                                List<PriceSegment> retSegments = routings.get(0).getRetSegments();
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                String backDateStr = null;
+                                if (retSegments != null && retSegments.size() > 0) {
+                                    Date backTime = retSegments.get(0).getDepTime();
+                                    backDateStr = simpleDateFormat.format(backTime);
+                                }
+                                String goDateStr = simpleDateFormat.format(goTime);
+
+                                String priceResultStr = objectMapper.writeValueAsString(priceResult);
+                                SearchInfo searchInfo = SearchInfo.builder()
+                                        .fromCityCode(fromCityCode)
+                                        .toCityCode(toCityCode)
+                                        .goDate(goDateStr)
+                                        .backDate(backDateStr)
+                                        .tripType(tripType)
+                                        .content(priceResultStr)
+                                        .build();
+                                SearchInfoExample searchInfoExample = new SearchInfoExample();
+                                searchInfoExample.createCriteria()
+                                        .andFromCityCodeEqualTo(fromCityCode)
+                                        .andToCityCodeEqualTo(toCityCode)
+                                        .andGoDateEqualTo(goDateStr);
+                                List<SearchInfo> searchInfos = searchInfoMapper.selectByExample(searchInfoExample);
+                                if (searchInfos == null || searchInfos.isEmpty()) {
+                                    searchInfoMapper.insert(searchInfo);
+                                } else {
+                                    log.info("update method!");
+                                    searchInfoMapper.updateByExampleSelective(searchInfo, searchInfoExample);
+                                }
+                            }
+                        }
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+
+
+                })
+                .run();
+    }
+
     /**
      * 携程报价信息抓取
      *
@@ -62,44 +119,7 @@ public class CtripGrabService {
             throw new UnsupportedOperationException("暂时不支持往返数据抓取");
         } else if (tripType == TripType.OW.getTripType()) {
             String owSearchUrl = getOwSearchUrl(fromCityCode, toCityCode, goDate);
-            Spider.create(ctripProcessor)
-                    .addUrl(owSearchUrl)
-                    .setDownloader(ctripDownloader)
-                    .thread(10)
-                    .addPipeline((resultItems, task) -> {
-                        PriceResult priceResult = resultItems.get("priceResult");
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        try {
-                            List<PriceRouting> routings = priceResult.getRoutings();
-                            if (routings != null && routings.size() > 0) {
-                                Date goTime = routings.get(0).getFromSegments().get(0).getDepTime();
-                                List<PriceSegment> retSegments = routings.get(0).getRetSegments();
-                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                                String backDateStr = null;
-                                if (retSegments != null && retSegments.size() > 0) {
-                                    Date backTime = retSegments.get(0).getDepTime();
-                                    backDateStr= simpleDateFormat.format(backTime);
-                                }
-                                String goDateStr = simpleDateFormat.format(goTime);
 
-                                String priceResultStr = objectMapper.writeValueAsString(priceResult);
-                                SearchInfo searchInfo = SearchInfo.builder()
-                                        .fromCityCode(fromCityCode)
-                                        .toCityCode(toCityCode)
-                                        .goDate(goDateStr)
-                                        .backDate(backDateStr)
-                                        .tripType(tripType)
-                                        .content(priceResultStr)
-                                        .build();
-                                searchInfoMapper.insert(searchInfo);
-                            }
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
-                        }
-
-
-                    })
-                    .run();
         }
     }
 
@@ -129,7 +149,6 @@ public class CtripGrabService {
         //报价航线信息
         List<PriceRouting> priceRoutings = Lists.newArrayList();
         priceResult.setRoutings(priceRoutings);
-        int index = 0;
         for (Element flightItem : flightItems) {
             //获取航班详情信息
             Optional<Element> flightDetailExpendOptional = getFlightDetailExpend(flightItem);
@@ -263,7 +282,7 @@ public class CtripGrabService {
      * @param goDate       出发日期 yyyy-MM-dd
      * @return url
      */
-    private String getOwSearchUrl(String fromCityCode, String toCityCode, String goDate) {
+    public String getOwSearchUrl(String fromCityCode, String toCityCode, String goDate) {
         //构建CtripUrlBuilder
         CtripUrlBuilder ctripUrlBuilder = CtripUrlBuilder.builder()
                 .tripType(TripType.OW.getTripType())

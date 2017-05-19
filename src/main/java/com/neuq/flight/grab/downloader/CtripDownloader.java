@@ -1,5 +1,6 @@
 package com.neuq.flight.grab.downloader;
 
+import com.neuq.flight.grab.constant.enumType.WebDriverType;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -55,7 +56,7 @@ public class CtripDownloader implements Downloader, Closeable {
         checkInit();
         WebDriver webDriver;
         try {
-            webDriver = webDriverPool.get();
+            webDriver = webDriverPool.get(WebDriverType.PHANTOMJS);
         } catch (InterruptedException e) {
             log.warn("interrupted", e);
             return null;

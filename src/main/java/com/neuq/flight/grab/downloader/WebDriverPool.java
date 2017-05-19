@@ -1,7 +1,9 @@
 package com.neuq.flight.grab.downloader;
 
+import com.neuq.flight.grab.constant.enumType.WebDriverType;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -38,23 +40,25 @@ public class WebDriverPool {
     /**
      * 基础配置
      */
-    public void config() {
-        sCaps = new DesiredCapabilities();
-        sCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, System.getProperty("phantomjs_exec_path"));
-
-        ArrayList<String> cliArgsCap = new ArrayList<String>();
+    public void config(WebDriverType webDriverType) {
+        ArrayList<String> cliArgsCap = new ArrayList<>();
         cliArgsCap.add("--web-security=false");
         cliArgsCap.add("--ssl-protocol=any");
         cliArgsCap.add("--ignore-ssl-errors=true");
-        sCaps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
-                cliArgsCap);
+//        sCaps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
+//                cliArgsCap);
+//
+//        // Control LogLevel for GhostDriver, via CLI arguments
+//        sCaps.setCapability(
+//                PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
+//                new String[] { "--logLevel=INFO"});
 
-        sCaps.setCapability(
-                PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
-                new String[]{"--logLevel=DEBUG"}
-        );
+        if (webDriverType == WebDriverType.CHROME) {
+            mDriver = new ChromeDriver();
+        } else if (webDriverType == WebDriverType.PHANTOMJS) {
+            mDriver = new PhantomJSDriver();
+        }
 
-        mDriver = new PhantomJSDriver(sCaps);
     }
 
 
@@ -81,8 +85,10 @@ public class WebDriverPool {
      * @return
      * @throws InterruptedException
      */
-    public WebDriver get() throws InterruptedException {
-        checkRunning();
+    public WebDriver get(WebDriverType webDriverType) throws InterruptedException {
+        if (!checkRunning()) {
+            config(webDriverType);
+        }
         WebDriver poll = innerQueue.poll();
         if (poll != null) {
             return poll;
@@ -92,7 +98,7 @@ public class WebDriverPool {
                 if (webDriverList.size() < capacity) {
 
                     // add new WebDriver instance into pool
-                    config();
+                    config(webDriverType);
                     innerQueue.add(mDriver);
                     webDriverList.add(mDriver);
                 }
@@ -102,15 +108,18 @@ public class WebDriverPool {
         return innerQueue.take();
     }
 
-    protected void checkRunning() {
+    protected boolean checkRunning() {
         if (!stat.compareAndSet(STAT_RUNNING, STAT_RUNNING)) {
-            throw new IllegalStateException("Already closed!");
+            log.info("Already closed!");
+            return false;
         }
+        return true;
     }
 
     public void returnToPool(WebDriver webDriver) {
-        checkRunning();
-        innerQueue.add(webDriver);
+        if (checkRunning()) {
+            innerQueue.add(webDriver);
+        }
     }
 
     public void closeAll() {
