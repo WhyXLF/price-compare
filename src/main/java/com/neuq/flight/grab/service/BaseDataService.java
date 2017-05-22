@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.neuq.flight.grab.constant.ctrip.UrlConstants;
 import com.neuq.flight.grab.entity.basedata.CityInfoResponse;
 import com.neuq.flight.grab.utils.http.HttpAgent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.util.Optional;
  * date:   2017/5/1.
  * description: 获取城市基础数据信息
  */
+@Slf4j
 @Service
 public class BaseDataService {
     /**
@@ -29,7 +31,13 @@ public class BaseDataService {
             String jsonResult = httpAgent.doGet(url).split("=")[1];
             return JSON.parseObject(jsonResult, CityInfoResponse.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("queryBaseData error ",e);
+            try {
+                String jsonResult = httpAgent.doGet(url).split("=")[1];
+                return JSON.parseObject(jsonResult, CityInfoResponse.class);
+            } catch (IOException e1) {
+                log.error("queryBaseData error ",e);
+            }
         }
         return null;
     }

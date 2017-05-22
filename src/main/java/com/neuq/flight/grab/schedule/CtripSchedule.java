@@ -42,6 +42,7 @@ public class CtripSchedule {
                 continue;
             }
             List<String>urls= Lists.newArrayList();
+            //获取搜索所的URL信息
             String owSearchUrl = ctripGrabService.getOwSearchUrl(from, to, goDate);
             urls.add(owSearchUrl);
             ctripGrabService.grabCtripPrice(from,to,TripType.OW.getTripType(),urls);

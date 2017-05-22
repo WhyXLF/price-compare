@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO" monitorInterval="60">
     <Properties>
-        <Property name="LOG_DIR">/opt/logs/price-platform/</Property>
+        <Property name="LOG_DIR">/opt/logs/price-compare/</Property>
         <Property name="PATTERN">[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %c{1} - %msg%n</Property>
     </Properties>
     <Appenders>
