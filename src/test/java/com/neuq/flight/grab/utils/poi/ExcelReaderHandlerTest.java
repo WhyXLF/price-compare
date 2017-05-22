@@ -2,6 +2,7 @@ package com.neuq.flight.grab.utils.poi;
 
 import com.neuq.flight.Application;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,9 +23,11 @@ public class ExcelReaderHandlerTest {
     @Test
     public void getContent() throws Exception {
         ExcelReaderHandler excelReaderHandler = new ExcelReaderHandler();
+        //读取excel文件内容，并打印
         excelReaderHandler.config("/ftd.xlsx");
+        //第0个sheet，第0行，第0列的数据内容
         String content = excelReaderHandler.getContent(0, 0, 0);
-        log.info("content={}",content);
+        Assert.assertEquals("from",content);
     }
 
 }

@@ -6,19 +6,22 @@
     <context id="mysql" defaultModelType="flat" targetRuntime="MyBatis3">
         <property name="beginningDelimiter" value="`"/>
         <property name="endingDelimiter" value="`"/>
+        <!--取消注解-->
         <commentGenerator>
             <property name="suppressAllComments" value="true"/>
             <property name="suppressDate" value="true"/>
         </commentGenerator>
+        <!--配置driverClass，MySQL连接的URL，用户名和密码-->
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
                         connectionURL="jdbc:mysql://localhost:3306/ctrip_db"
                         userId="root"
                         password="123456"/>
-
+        <!--配置java对象的生成路径-->
         <javaModelGenerator targetPackage="com.neuq.flight.grab.domain" targetProject="./src/main/java">
             <property name="enableSubPackages" value="true"/>
             <property name="trimStrings" value="true"/>
         </javaModelGenerator>
+        <!--配置mapper生成的路径信息-->
         <sqlMapGenerator targetPackage="mapper" targetProject="./src/main/resources">
             <property name="enableSubPackages" value="true"/>
         </sqlMapGenerator>

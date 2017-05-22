@@ -49,7 +49,7 @@ public class CtripGrabService {
     @Resource
     private CtripDownloader ctripDownloader;
 
-    public void grabCtripPrice(String fromCityCode,String toCityCode,int tripType,List<String> urls) {
+    public void grabCtripPrice(String fromCityCode, String toCityCode, int tripType, List<String> urls) {
         Spider spider = Spider.create(ctripProcessor);
         for (String url : urls) {
             spider.addUrl(url);
@@ -82,15 +82,21 @@ public class CtripGrabService {
                                         .tripType(tripType)
                                         .content(priceResultStr)
                                         .build();
+                                //生成查询语句
                                 SearchInfoExample searchInfoExample = new SearchInfoExample();
                                 searchInfoExample.createCriteria()
+                                        //出发城市三字码
                                         .andFromCityCodeEqualTo(fromCityCode)
+                                        //到达城市三字码
                                         .andToCityCodeEqualTo(toCityCode)
+                                        //出发日期
                                         .andGoDateEqualTo(goDateStr);
                                 List<SearchInfo> searchInfos = searchInfoMapper.selectByExample(searchInfoExample);
+                                //如果指定的ftd不存在，则插入
                                 if (searchInfos == null || searchInfos.isEmpty()) {
                                     searchInfoMapper.insert(searchInfo);
                                 } else {
+                                    //否则，更新数据
                                     log.info("update method!");
                                     searchInfoMapper.updateByExampleSelective(searchInfo, searchInfoExample);
                                 }
@@ -119,7 +125,7 @@ public class CtripGrabService {
             throw new UnsupportedOperationException("暂时不支持往返数据抓取");
         } else if (tripType == TripType.OW.getTripType()) {
             String owSearchUrl = getOwSearchUrl(fromCityCode, toCityCode, goDate);
-
+            grabCtripPrice(fromCityCode, toCityCode, TripType.OW.getTripType(), Arrays.asList(owSearchUrl));
         }
     }
 
